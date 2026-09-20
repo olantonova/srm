@@ -90,16 +90,15 @@ h1{font-family:var(--display);font-weight:700;text-wrap:balance;letter-spacing:-
 .rl .dv{margin-left:auto;font-size:12px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
 .rl .dv.off{color:var(--berry);font-weight:600}
 .rc{display:flex;gap:8px;align-items:center}
-.ts{flex:1;min-width:86px;height:36px;border-radius:11px;background:var(--rose-soft);color:var(--ink);display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:700;font-size:18px;font-variant-numeric:tabular-nums}
-.ts select{appearance:none;-webkit-appearance:none;border:0;border-radius:8px;background:transparent;color:inherit;font:inherit;height:100%;width:2.1em;padding:0;margin:0;text-align:center;text-align-last:center;cursor:pointer}
-.ts .c{padding-bottom:2px}
-.ts.big{flex:none;width:128px;height:48px;font-size:21px;border-radius:13px}
+input.t{flex:1;min-width:86px;width:86px;height:36px;border:1px solid transparent;border-radius:11px;background:var(--rose-soft);color:var(--ink);font-family:var(--display);font-weight:700;font-size:18px;text-align:center;font-variant-numeric:tabular-nums;padding:0 4px;margin:0}
+input.t::placeholder{color:var(--muted);font-family:var(--body);font-weight:500;font-size:13px}
+input.t.big{flex:none;width:128px;height:48px;font-size:21px;border-radius:13px}
 .seg{display:flex;gap:4px;flex:none}
 .sg{width:38px;height:36px;border-radius:11px;background:var(--ground);border:1px solid var(--line);font-family:var(--display);font-weight:700;font-size:15px;flex:none}
 .sg[aria-pressed="true"]{background:var(--berry);border-color:var(--berry);color:var(--berry-ink)}
 .sg.no{width:58px;font-family:var(--body);font-weight:500;font-size:11.5px;color:var(--muted)}
 .sg.no[aria-pressed="true"]{background:var(--rose);border-color:var(--rose);color:var(--rose-ink)}
-.row.none .ts,.row.none .seg{opacity:.35;pointer-events:none}
+.row.none input.t,.row.none .seg{opacity:.35;pointer-events:none}
 .sc{display:grid;grid-template-columns:repeat(11,1fr);gap:2px}
 .sc button{height:32px;border-radius:8px;background:var(--ground);border:1px solid var(--line);font-size:11.5px;font-weight:600;font-variant-numeric:tabular-nums}
 .sc button.zero{border-color:var(--muted)}
@@ -166,13 +165,13 @@ function weekLabel(w){var a=parse(w),b=parse(addDays(w,6));
     : a.getDate()+' '+MON[a.getMonth()]+' – '+b.getDate()+' '+MON[b.getMonth()]}
 function mins(t){var p=t.split(':');return (+p[0])*60+(+p[1])}
 function round15(t){if(!t)return '';var m=Math.round(mins(t)/15)*15;m=((m%1440)+1440)%1440;return pad(Math.floor(m/60))+':'+pad(m%60)}
-function timeSel(kind,k,val,name,cls){
-  var t=round15(val),hh=t?t.slice(0,2):'',mm=t?t.slice(3):'',h='<option value="">--</option>',m='<option value="">--</option>';
-  for(var i=0;i<24;i++)h+='<option'+(pad(i)===hh?' selected':'')+'>'+pad(i)+'</option>';
-  ['00','15','30','45'].forEach(function(x){m+='<option'+(x===mm?' selected':'')+'>'+x+'</option>'});
-  var d=' data-kind="'+kind+'" data-k="'+k+'"';
-  return '<span class="ts'+cls+'"><select id="h-'+kind+'-'+k+'"'+d+' data-part="h" aria-label="'+name+': часы">'+h+'</select><span class="c">:</span>'+
-    '<select id="m-'+kind+'-'+k+'"'+d+' data-part="m" aria-label="'+name+': минуты">'+m+'</select></span>';
+function timeField(kind,k,val,name,cls){
+  return '<input type="text" inputmode="numeric" autocomplete="off" maxlength="5" placeholder="чч:мм" class="t'+cls+'" id="t-'+kind+'-'+k+'" data-kind="'+kind+'" data-k="'+k+'" value="'+round15(val)+'" aria-label="'+name+': время">';
+}
+function parseTime(str){
+  var d=str.replace(/\D/g,'');if(!d)return '';var h,m;
+  if(d.length<=2){h=+d;m=0}else if(d.length===3){h=+d[0];m=+d.slice(1)}else{h=+d.slice(0,2);m=+d.slice(2,4)}
+  if(h>23||m>59)return null;return pad(h)+':'+pad(m);
 }
 function devOf(t,plan){var d=mins(t)-mins(plan);if(d>720)d-=1440;if(d<-720)d+=1440;return d}
 function devShort(d){if(d===0)return 'по плану';var a=Math.abs(d),h=Math.floor(a/60),m=a%60;
@@ -251,7 +250,7 @@ function vDay(){
     rows+='<div class="row'+(e.none?' none':'')+'"><div class="rl"><span class="nm">'+a.name+'</span>'+
       (plan[a.k]?'<span class="pl">план '+plan[a.k]+'</span>':'')+
       '<span class="dv'+(dv.off?' off':'')+'" id="dv-'+a.k+'">'+dv.t+'</span></div>'+
-      '<div class="rc">'+timeSel('day',a.k,e.t,a.name,'')+
+      '<div class="rc">'+timeField('day',a.k,e.t,a.name,'')+
       '<div class="seg" role="group" aria-label="'+a.name+': люди рядом">'+seg+'</div>'+
       '<button class="sg no" data-act="none" data-k="'+a.k+'" aria-pressed="'+!!e.none+'">не было</button></div></div>'});
   [['mood','Настроение'],['energy','Энергия']].forEach(function(m){
@@ -270,7 +269,7 @@ function vDay(){
     '<div class="sheet">'+rows+'</div>'+
     (!demo&&!hasAny()?'<button class="link" data-act="demo">Показать пример заполнения</button>':'')+
     '</div><div class="foot">'+
-    '<button class="btn '+(pc?'quiet':'primary')+'" data-act="plan">'+(pc?'План':'Задать план')+'</button>'+
+    '<button class="btn '+(pc?'quiet':'primary')+'" data-act="plan">'+'План'+'</button>'+
     '<button class="btn quiet" data-act="week">Неделя</button>'+
     '<button class="btn '+(pc?'primary':'quiet')+'" data-act="send">Отправить</button></div>';
 }
@@ -282,8 +281,8 @@ function refreshDay(){
 
 function vPlan(){
   var p=planFor(ui.week),rows='';
-  ACTS.forEach(function(a){rows+='<div class="planrow"><label for="h-plan-'+a.k+'">'+a.name+'</label>'+
-    timeSel('plan',a.k,p[a.k],a.name,' big')+'</div>'});
+  ACTS.forEach(function(a){rows+='<div class="planrow"><label for="t-plan-'+a.k+'">'+a.name+'</label>'+
+    timeField('plan',a.k,p[a.k],a.name,' big')+'</div>'});
   return '<div class="top"><button class="round" data-act="day" aria-label="Назад">‹</button><div class="grow"><p class="eyebrow">'+weekLabel(ui.week)+'</p><h1 class="title big">План по времени</h1></div></div>'+
     '<div class="scroll"><p class="hint">Удачное время, в которое вы хотели бы делать это каждый день. План задаётся один раз на неделю и переносится на следующие, пока вы его не поменяете.</p>'+
     '<div class="block">'+rows+'</div>'+
@@ -365,16 +364,26 @@ function copyText(){
   function fallback(){try{t.focus();t.select();document.execCommand('copy')?toast('Скопировано'):toast('Выделите текст и скопируйте вручную')}catch(x){toast('Выделите текст и скопируйте вручную')}}
   if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(function(){toast('Скопировано')},fallback);else fallback();
 }
-app.addEventListener('change',function(ev){
-  var el=ev.target;
-  if(!el.dataset.part)return;
-  var kind=el.dataset.kind,k=el.dataset.k,hs=document.getElementById('h-'+kind+'-'+k),ms=document.getElementById('m-'+kind+'-'+k),val='';
-  if(!hs.value){ms.value=''}
-  else{if(!ms.value)ms.value='00';val=hs.value+':'+ms.value}
-  if(el.dataset.part==='m'&&!hs.value){toast('Сначала выберите час');return}
-  if(kind==='day'){var e=entry(ui.day,k);if(val)e.t=val;else delete e.t;save();refreshDay()}
-  else{var pl=Object.assign({},planFor(ui.week));if(val)pl[k]=val;else delete pl[k];S.plans[ui.week]=pl;save()}
+function commitTime(el){
+  var kind=el.dataset.kind,k=el.dataset.k;
+  var cur=kind==='day'?((dayData(ui.day)[k]||{}).t||''):(planFor(ui.week)[k]||'');
+  var t=parseTime(el.value);
+  if(t===null){toast('Не похоже на время. Наберите, например, 930');el.value=cur;return}
+  var r=round15(t);
+  if(r!==t)toast('Округлено до '+r);
+  el.value=r;
+  if(r===cur)return;
+  if(kind==='day'){var e=entry(ui.day,k);if(r)e.t=r;else delete e.t;save();refreshDay()}
+  else{var pl=Object.assign({},planFor(ui.week));if(r)pl[k]=r;else delete pl[k];S.plans[ui.week]=pl;save()}
+}
+app.addEventListener('input',function(ev){
+  var el=ev.target;if(!el.dataset||!el.dataset.kind)return;
+  var d=el.value.replace(/\D/g,'').slice(0,4);
+  el.value=d.length<=2?d:d.length===3?d[0]+':'+d.slice(1):d.slice(0,2)+':'+d.slice(2);
 });
+app.addEventListener('focusout',function(ev){var el=ev.target;if(el.dataset&&el.dataset.kind)commitTime(el)});
+app.addEventListener('focusin',function(ev){var el=ev.target;if(el.dataset&&el.dataset.kind)setTimeout(function(){try{el.select()}catch(x){}},0)});
+app.addEventListener('keydown',function(ev){if(ev.key==='Enter'&&ev.target.dataset&&ev.target.dataset.kind)ev.target.blur()});
 
 render();
 })();
