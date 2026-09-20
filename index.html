@@ -36,7 +36,7 @@
 html,body{height:100%;margin:0}
 body{background:var(--ground);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.4;padding-inline:16px}
 button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
-button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--berry);outline-offset:2px}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--berry);outline-offset:2px}
 h1,h2,h3,p{margin:0}
 h1{font-family:var(--display);font-weight:700;text-wrap:balance;letter-spacing:-0.01em}
 
@@ -90,17 +90,16 @@ h1{font-family:var(--display);font-weight:700;text-wrap:balance;letter-spacing:-
 .rl .dv{margin-left:auto;font-size:12px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
 .rl .dv.off{color:var(--berry);font-weight:600}
 .rc{display:flex;gap:8px;align-items:center}
-input[type=time]{appearance:none;-webkit-appearance:none;border:1px solid transparent;background:var(--rose-soft);color:var(--ink);font-family:var(--display);font-weight:700;text-align:center;font-variant-numeric:tabular-nums}
-input[type=time]{position:relative}
-input[type=time]::-webkit-date-and-time-value{text-align:center}
-input[type=time]::-webkit-calendar-picker-indicator{position:absolute;inset:0;width:100%;height:100%;margin:0;padding:0;opacity:0;cursor:pointer}
-input.t{flex:1;min-width:86px;width:86px;height:36px;border-radius:11px;font-size:18px;padding:0 4px}
+.ts{flex:1;min-width:86px;height:36px;border-radius:11px;background:var(--rose-soft);color:var(--ink);display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:700;font-size:18px;font-variant-numeric:tabular-nums}
+.ts select{appearance:none;-webkit-appearance:none;border:0;border-radius:8px;background:transparent;color:inherit;font:inherit;height:100%;width:2.1em;padding:0;margin:0;text-align:center;text-align-last:center;cursor:pointer}
+.ts .c{padding-bottom:2px}
+.ts.big{flex:none;width:128px;height:48px;font-size:21px;border-radius:13px}
 .seg{display:flex;gap:4px;flex:none}
 .sg{width:38px;height:36px;border-radius:11px;background:var(--ground);border:1px solid var(--line);font-family:var(--display);font-weight:700;font-size:15px;flex:none}
 .sg[aria-pressed="true"]{background:var(--berry);border-color:var(--berry);color:var(--berry-ink)}
 .sg.no{width:58px;font-family:var(--body);font-weight:500;font-size:11.5px;color:var(--muted)}
 .sg.no[aria-pressed="true"]{background:var(--rose);border-color:var(--rose);color:var(--rose-ink)}
-.row.none input.t,.row.none .seg{opacity:.35;pointer-events:none}
+.row.none .ts,.row.none .seg{opacity:.35;pointer-events:none}
 .sc{display:grid;grid-template-columns:repeat(11,1fr);gap:2px}
 .sc button{height:32px;border-radius:8px;background:var(--ground);border:1px solid var(--line);font-size:11.5px;font-weight:600;font-variant-numeric:tabular-nums}
 .sc button.zero{border-color:var(--muted)}
@@ -131,7 +130,6 @@ input.t{flex:1;min-width:86px;width:86px;height:36px;border-radius:11px;font-siz
 .planrow{display:flex;align-items:center;gap:12px;padding:10px 14px}
 .planrow + .planrow{border-top:1px solid var(--line)}
 .planrow label{flex:1;font-weight:500;font-size:15px}
-.planrow input[type=time]{width:128px;height:48px;font-size:21px;border-radius:13px;padding:0 6px;flex:none}
 textarea{width:100%;min-height:300px;border-radius:16px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:400 14px/1.5 var(--body);padding:14px;resize:vertical}
 #toast{position:fixed;left:50%;bottom:calc(76px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--ground);padding:9px 16px;border-radius:999px;font-size:14px;font-weight:500;max-width:calc(100% - 32px);text-align:center;z-index:5}
 </style>
@@ -167,6 +165,15 @@ function weekLabel(w){var a=parse(w),b=parse(addDays(w,6));
   return a.getMonth()===b.getMonth()? a.getDate()+'–'+b.getDate()+' '+MON[b.getMonth()]
     : a.getDate()+' '+MON[a.getMonth()]+' – '+b.getDate()+' '+MON[b.getMonth()]}
 function mins(t){var p=t.split(':');return (+p[0])*60+(+p[1])}
+function round15(t){if(!t)return '';var m=Math.round(mins(t)/15)*15;m=((m%1440)+1440)%1440;return pad(Math.floor(m/60))+':'+pad(m%60)}
+function timeSel(kind,k,val,name,cls){
+  var t=round15(val),hh=t?t.slice(0,2):'',mm=t?t.slice(3):'',h='<option value="">--</option>',m='<option value="">--</option>';
+  for(var i=0;i<24;i++)h+='<option'+(pad(i)===hh?' selected':'')+'>'+pad(i)+'</option>';
+  ['00','15','30','45'].forEach(function(x){m+='<option'+(x===mm?' selected':'')+'>'+x+'</option>'});
+  var d=' data-kind="'+kind+'" data-k="'+k+'"';
+  return '<span class="ts'+cls+'"><select id="h-'+kind+'-'+k+'"'+d+' data-part="h" aria-label="'+name+': часы">'+h+'</select><span class="c">:</span>'+
+    '<select id="m-'+kind+'-'+k+'"'+d+' data-part="m" aria-label="'+name+': минуты">'+m+'</select></span>';
+}
 function devOf(t,plan){var d=mins(t)-mins(plan);if(d>720)d-=1440;if(d<-720)d+=1440;return d}
 function devShort(d){if(d===0)return 'по плану';var a=Math.abs(d),h=Math.floor(a/60),m=a%60;
   return (d>0?'+':'−')+(h?h+' ч ':'')+(m||!h?m+' мин':'')}
@@ -197,13 +204,13 @@ function demoData(){
   var w=mondayOf(today()),out={plans:{},days:{}};
   out.plans[w]={wake:'08:00',contact:'09:00',work:'10:00',dinner:'19:00',bed:'23:30'};
   var rows=[
-   {wake:['08:10',0],contact:['09:05',1],work:['10:00',1],dinner:['19:15',2],bed:['23:40',0],mood:0,energy:-1},
-   {wake:['08:40',0],contact:['09:30',1],work:['10:25',0],dinner:['19:00',2],bed:['01:30',3],mood:1,energy:1},
-   {wake:['11:05',0],contact:['12:40',1],work:['13:00',0],dinner:['21:10',0],bed:['00:20',0],mood:-2,energy:-3},
-   {wake:['08:20',0],contact:['09:00',2],work:['10:10',1],dinner:['19:30',2],bed:['23:25',0],mood:0,energy:0},
-   {wake:['08:05',0],contact:['08:50',1],work:['09:55',1],dinner:['20:40',3],bed:['00:50',3],mood:2,energy:2},
-   {wake:['09:45',1],contact:['09:45',2],work:['12:00',2],dinner:['19:10',2],bed:['23:50',1],mood:1,energy:0},
-   {wake:['09:10',1],contact:['09:10',2],work:['11:30',1],dinner:['18:50',2],bed:['23:30',0],mood:1,energy:1}];
+   {wake:['08:15',0],contact:['09:00',1],work:['10:00',1],dinner:['19:15',2],bed:['23:45',0],mood:0,energy:-1},
+   {wake:['08:45',0],contact:['09:30',1],work:['10:30',0],dinner:['19:00',2],bed:['01:30',3],mood:1,energy:1},
+   {wake:['11:00',0],contact:['12:45',1],work:['13:00',0],dinner:['21:15',0],bed:['00:15',0],mood:-2,energy:-3},
+   {wake:['08:15',0],contact:['09:00',2],work:['10:15',1],dinner:['19:30',2],bed:['23:30',0],mood:0,energy:0},
+   {wake:['08:00',0],contact:['08:45',1],work:['10:00',1],dinner:['20:45',3],bed:['00:45',3],mood:2,energy:2},
+   {wake:['09:45',1],contact:['09:45',2],work:['12:00',2],dinner:['19:15',2],bed:['23:45',1],mood:1,energy:0},
+   {wake:['09:15',1],contact:['09:15',2],work:['11:30',1],dinner:['18:45',2],bed:['23:30',0],mood:1,energy:1}];
   var last=Math.max(wdIndex(today()),3);
   for(var i=0;i<=last&&i<7;i++){var r=rows[i],d={};
     ACTS.forEach(function(a){d[a.k]={t:r[a.k][0],p:r[a.k][1]}});
@@ -244,7 +251,7 @@ function vDay(){
     rows+='<div class="row'+(e.none?' none':'')+'"><div class="rl"><span class="nm">'+a.name+'</span>'+
       (plan[a.k]?'<span class="pl">план '+plan[a.k]+'</span>':'')+
       '<span class="dv'+(dv.off?' off':'')+'" id="dv-'+a.k+'">'+dv.t+'</span></div>'+
-      '<div class="rc"><input type="time" class="t" id="time-'+a.k+'" data-time="'+a.k+'" value="'+(e.t||'')+'" aria-label="'+a.name+': время">'+
+      '<div class="rc">'+timeSel('day',a.k,e.t,a.name,'')+
       '<div class="seg" role="group" aria-label="'+a.name+': люди рядом">'+seg+'</div>'+
       '<button class="sg no" data-act="none" data-k="'+a.k+'" aria-pressed="'+!!e.none+'">не было</button></div></div>'});
   [['mood','Настроение'],['energy','Энергия']].forEach(function(m){
@@ -275,8 +282,8 @@ function refreshDay(){
 
 function vPlan(){
   var p=planFor(ui.week),rows='';
-  ACTS.forEach(function(a){rows+='<div class="planrow"><label for="plan-'+a.k+'">'+a.name+'</label>'+
-    '<input type="time" id="plan-'+a.k+'" data-plan="'+a.k+'" value="'+(p[a.k]||'')+'"></div>'});
+  ACTS.forEach(function(a){rows+='<div class="planrow"><label for="h-plan-'+a.k+'">'+a.name+'</label>'+
+    timeSel('plan',a.k,p[a.k],a.name,' big')+'</div>'});
   return '<div class="top"><button class="round" data-act="day" aria-label="Назад">‹</button><div class="grow"><p class="eyebrow">'+weekLabel(ui.week)+'</p><h1 class="title big">План по времени</h1></div></div>'+
     '<div class="scroll"><p class="hint">Удачное время, в которое вы хотели бы делать это каждый день. План задаётся один раз на неделю и переносится на следующие, пока вы его не поменяете.</p>'+
     '<div class="block">'+rows+'</div>'+
@@ -360,8 +367,13 @@ function copyText(){
 }
 app.addEventListener('change',function(ev){
   var el=ev.target;
-  if(el.dataset.time){var e=entry(ui.day,el.dataset.time);if(el.value)e.t=el.value;else delete e.t;save();refreshDay()}
-  else if(el.dataset.plan){var pl=Object.assign({},planFor(ui.week));if(el.value)pl[el.dataset.plan]=el.value;else delete pl[el.dataset.plan];S.plans[ui.week]=pl;save()}
+  if(!el.dataset.part)return;
+  var kind=el.dataset.kind,k=el.dataset.k,hs=document.getElementById('h-'+kind+'-'+k),ms=document.getElementById('m-'+kind+'-'+k),val='';
+  if(!hs.value){ms.value=''}
+  else{if(!ms.value)ms.value='00';val=hs.value+':'+ms.value}
+  if(el.dataset.part==='m'&&!hs.value){toast('Сначала выберите час');return}
+  if(kind==='day'){var e=entry(ui.day,k);if(val)e.t=val;else delete e.t;save();refreshDay()}
+  else{var pl=Object.assign({},planFor(ui.week));if(val)pl[k]=val;else delete pl[k];S.plans[ui.week]=pl;save()}
 });
 
 render();
