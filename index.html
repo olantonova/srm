@@ -129,7 +129,7 @@ input.t.big{flex:none;width:128px;height:48px;font-size:21px;border-radius:13px}
 .planrow{display:flex;align-items:center;gap:12px;padding:10px 14px}
 .planrow + .planrow{border-top:1px solid var(--line)}
 .planrow label{flex:1;font-weight:500;font-size:15px}
-textarea{width:100%;min-height:300px;border-radius:16px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:400 14px/1.5 var(--body);padding:14px;resize:vertical}
+textarea{width:100%;min-height:190px;border-radius:16px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:400 14px/1.5 var(--body);padding:14px;resize:vertical}
 #toast{display:flex;gap:12px;align-items:center;justify-content:center;position:fixed;left:50%;bottom:calc(76px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--ground);padding:9px 16px;border-radius:999px;font-size:14px;font-weight:500;max-width:calc(100% - 32px);text-align:center;z-index:5}
 #toast button{font-weight:700;text-decoration:underline;text-underline-offset:3px;white-space:nowrap}
 .wkbtn{display:flex;flex-direction:column;align-items:center;border-radius:12px;padding:2px 0}
@@ -163,6 +163,12 @@ textarea{width:100%;min-height:300px;border-radius:16px;border:1px solid var(--l
 .sum div{display:flex;justify-content:space-between;gap:12px;padding:9px 14px;font-size:13px}
 .sum div + div{border-top:1px solid var(--line)}
 .sum span:last-child{color:var(--muted);white-space:nowrap}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-weight:600;font-size:14px}
+.field input{height:48px;border-radius:13px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:500 17px var(--body);padding:0 14px;width:100%}
+.sentline{font-size:13px;color:var(--berry);font-weight:600}
+.pair{display:flex;gap:8px}
+.sub{font-family:var(--display);font-weight:700;font-size:15px}
 </style>
 </head>
 <body>
@@ -185,6 +191,7 @@ var MONN=['Январь','Февраль','Март','Апрель','Май','И
 var SHORT=['Подъём','Контакт','Дела','Ужин','Отбой'];
 var MON=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
 var KEY='srm-diary-v1', TOTAL=7;
+var ENDPOINT='https://script.google.com/macros/s/AKfycbyl2Zziq3WnDgS2seCCB2kiCtgr70xCHvOy-kY_ey1D3JwLvblEon2PlBitcjyEg1AFDA/exec'; // адрес приёмника (Google Apps Script), куда уходит неделя по кнопке «Отправить в таблицу»
 
 function pad(n){return String(n).padStart(2,'0')}
 function iso(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())}
@@ -395,11 +402,39 @@ function weekText(){
   if(!any)L.push('','За эту неделю пока нет записей.');
   return L.join('\n');
 }
+function esc(t){return String(t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;')}
+function sentLabel(w){
+  var ts=S.sent&&S.sent[w];if(!ts)return '';var d=new Date(ts);
+  return 'Отправлено '+pad(d.getDate())+'.'+pad(d.getMonth()+1)+' в '+pad(d.getHours())+':'+pad(d.getMinutes())+'. Можно отправить ещё раз — записи обновятся.';
+}
 function vSend(){
-  return '<div class="top"><button class="round" data-act="day" aria-label="Назад">‹</button><div class="grow"><p class="eyebrow">'+weekLabel(ui.week)+'</p><h1 class="title big">Отправить терапевту</h1></div></div>'+
-    '<div class="scroll"><p class="hint">Неделя собрана в одно сообщение. Скопируйте его и вставьте в мессенджер. Сама страница никуда ничего не отправляет.</p>'+
-    '<textarea id="send-text" readonly aria-label="Текст для терапевта">'+weekText()+'</textarea></div>'+
+  var top='<div class="top"><button class="round" data-act="day" aria-label="Назад">‹</button><div class="grow"><p class="eyebrow">'+weekLabel(ui.week)+'</p><h1 class="title big">Отправить терапевту</h1></div></div>';
+  var text='<textarea id="send-text" readonly aria-label="Текст для терапевта">'+esc(weekText())+'</textarea>';
+  var pair='<div class="pair">'+(navigator.share?'<button class="btn quiet" data-act="share">Поделиться</button>':'')+'<button class="btn quiet" data-act="copy">Скопировать</button></div>';
+  if(!ENDPOINT)return top+'<div class="scroll"><p class="hint">Неделя собрана в одно сообщение. Скопируйте его и вставьте в мессенджер. Сама страница никуда ничего не отправляет.</p>'+text+'</div>'+
     '<div class="foot">'+(navigator.share?'<button class="btn quiet tall" data-act="share">Поделиться</button>':'')+'<button class="btn primary tall" data-act="copy">Скопировать</button></div>';
+  var sl=sentLabel(ui.week);
+  return top+'<div class="scroll">'+
+    '<p class="hint">По кнопке внизу записи этой недели и ваше имя отправятся в таблицу вашего терапевта (Google Таблицы). Пока вы не нажали кнопку, ничего никуда не уходит.</p>'+
+    '<div class="field"><label for="client-name">Ваше имя</label><input type="text" id="client-name" autocomplete="given-name" maxlength="60" placeholder="Как вас знает терапевт" value="'+esc(S.name)+'"></div>'+
+    (sl?'<p class="sentline">'+sl+'</p>':'')+
+    '<h2 class="sub">Или перешлите текстом</h2>'+text+pair+'</div>'+
+    '<div class="foot"><button class="btn primary tall" id="send-btn" data-act="sendsheet">Отправить в таблицу</button></div>';
+}
+function sendSheet(btn){
+  if(demo){toast('Это пример — отправка отключена');return}
+  var name=(S.name||'').trim();
+  if(!name){toast('Впишите своё имя');var n=document.getElementById('client-name');if(n)n.focus();return}
+  var w=ui.week,t=today(),days=[],any=false;
+  for(var i=0;i<7;i++){var d=addDays(w,i);if(d>t)break;var x=dayData(d);if(hasDay(d))any=true;
+    days.push({date:d,wake:x.wake||null,contact:x.contact||null,work:x.work||null,dinner:x.dinner||null,bed:x.bed||null,
+      mood:typeof x.mood==='number'?x.mood:null,energy:typeof x.energy==='number'?x.energy:null})}
+  if(!any&&!(S.sent&&S.sent[w])){toast('За эту неделю пока нет записей');return}
+  btn.disabled=true;btn.textContent='Отправляю…';
+  fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({name:name,week:w,plan:planFor(w),days:days})})
+    .then(function(r){return r.json()})
+    .then(function(res){if(!res||!res.ok)throw new Error(res&&res.error);S.sent=S.sent||{};S.sent[w]=Date.now();save();if(ui.view==='send')render();toast('Отправлено')})
+    .catch(function(){btn.disabled=false;btn.textContent='Отправить в таблицу';toast('Не получилось отправить. Проверьте интернет и попробуйте ещё раз')});
 }
 
 function shiftWeek(n){
@@ -440,6 +475,7 @@ app.addEventListener('click',function(ev){
     case 'demo':real=S;S=demoData();demo=true;ui.day=today();ui.week=mondayOf(ui.day);render();break;
     case 'undemo':S=real||{plans:{},days:{}};real=null;demo=false;render();break;
     case 'copy':copyText();break;
+    case 'sendsheet':sendSheet(b);break;
     case 'share':try{navigator.share({text:weekText()}).catch(function(){})}catch(x){copyText()}break;
   }
 });
@@ -461,7 +497,9 @@ function commitTime(el){
   else{var pl=Object.assign({},planFor(ui.week));if(r)pl[k]=r;else delete pl[k];S.plans[ui.week]=pl;save()}
 }
 app.addEventListener('input',function(ev){
-  var el=ev.target;if(!el.dataset||!el.dataset.kind)return;
+  var el=ev.target;
+  if(el.id==='client-name'){S.name=el.value.slice(0,60);save();return}
+  if(!el.dataset||!el.dataset.kind)return;
   var d=el.value.replace(/\D/g,'').slice(0,4);
   el.value=d.length<=2?d:d.length===3?d[0]+':'+d.slice(1):d.slice(0,2)+':'+d.slice(2);
 });
