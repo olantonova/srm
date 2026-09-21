@@ -129,7 +129,7 @@ input.t.big{flex:none;width:128px;height:48px;font-size:21px;border-radius:13px}
 .planrow{display:flex;align-items:center;gap:12px;padding:10px 14px}
 .planrow + .planrow{border-top:1px solid var(--line)}
 .planrow label{flex:1;font-weight:500;font-size:15px}
-textarea{width:100%;min-height:190px;border-radius:16px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:400 14px/1.5 var(--body);padding:14px;resize:vertical}
+textarea{width:100%;min-height:190px;flex:1 0 190px;border-radius:16px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:400 14px/1.5 var(--body);padding:14px;resize:vertical}
 #toast{display:flex;gap:12px;align-items:center;justify-content:center;position:fixed;left:50%;bottom:calc(76px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--ground);padding:9px 16px;border-radius:999px;font-size:14px;font-weight:500;max-width:calc(100% - 32px);text-align:center;z-index:5}
 #toast button{font-weight:700;text-decoration:underline;text-underline-offset:3px;white-space:nowrap}
 .wkbtn{display:flex;flex-direction:column;align-items:center;border-radius:12px;padding:2px 0}
@@ -169,6 +169,7 @@ textarea{width:100%;min-height:190px;border-radius:16px;border:1px solid var(--l
 .sentline{font-size:13px;color:var(--berry);font-weight:600}
 .pair{display:flex;gap:8px}
 .sub{font-family:var(--display);font-weight:700;font-size:15px}
+.credit{font-size:11.5px;line-height:1.4;color:var(--muted);margin-top:auto;padding-top:8px}
 </style>
 </head>
 <body>
@@ -227,6 +228,7 @@ function save(){if(demo)return;try{localStorage.setItem(KEY,JSON.stringify(S))}c
 
 var ui={view:'day',week:mondayOf(today()),day:today(),cal:today().slice(0,7)+'-01'};
 var undo=null;
+var CREDIT='<p class="credit">Основано на Social Rhythm Metric II-5 (SRM II-5-BPII). © Ellen Frank, PhD, и Holly A. Swartz, MD, 2011.</p>';
 
 function planFor(w){
   if(S.plans[w])return S.plans[w];
@@ -335,7 +337,7 @@ function vPlan(){
   return '<div class="top"><button class="round" data-act="day" aria-label="Назад">‹</button><div class="grow"><p class="eyebrow">'+weekLabel(ui.week)+'</p><h1 class="title big">План по времени</h1></div></div>'+
     '<div class="scroll"><p class="hint">Удачное время, в которое вы хотели бы делать это каждый день. План задаётся один раз на неделю и переносится на следующие, пока вы его не поменяете.</p>'+
     '<div class="block">'+rows+'</div>'+
-    '<p class="hint">Записи хранятся только на этом телефоне, в этом браузере.</p></div>'+
+    '<p class="hint">Записи хранятся только на этом телефоне, в этом браузере.</p>'+CREDIT+'</div>'+
     '<div class="foot"><button class="btn primary tall" data-act="day">Готово</button></div>';
 }
 
@@ -364,7 +366,7 @@ function vWeek(){
       sum+='<div><span>'+a.name+' · план '+pl+'</span><span>'+(total?hits+' из '+total:'—')+'</span></div>'});
     out+='<div class="block"><div class="head"><span>В пределах 45 минут от плана</span><span>дней</span></div><div class="sum">'+sum+'</div></div>'}
   return '<div class="top"><button class="round" data-act="day" aria-label="Назад">‹</button><div class="grow"><p class="eyebrow">'+weekLabel(w)+'</p><h1 class="title big">Неделя по дням</h1></div></div>'+
-    '<div class="scroll"><p class="hint">'+(anyPlan?'Точка — насколько раньше или позже плана это было (шкала от −3 до +3 часов), розовая зона — в пределах 45 минут. Цифра справа — люди, от 0 до 3.':'Задайте план по времени, чтобы видеть отклонения. Цифра справа — люди, от 0 до 3.')+'</p>'+out+'</div>'+
+    '<div class="scroll"><p class="hint">'+(anyPlan?'Точка — насколько раньше или позже плана это было (шкала от −3 до +3 часов), розовая зона — в пределах 45 минут. Цифра справа — люди, от 0 до 3.':'Задайте план по времени, чтобы видеть отклонения. Цифра справа — люди, от 0 до 3.')+'</p>'+out+CREDIT+'</div>'+
     '<div class="foot"><button class="btn primary tall" data-act="send">Отправить терапевту</button></div>';
 }
 
@@ -383,7 +385,7 @@ function vCal(){
     '<div class="scroll"><div class="calnav"><button class="round" data-act="calprev" aria-label="Предыдущий месяц">‹</button><h2>'+MONN[m]+' '+first.getFullYear()+'</h2>'+
     '<button class="round" data-act="calnext" aria-label="Следующий месяц"'+(ui.cal>=curMonth?' style="visibility:hidden"':'')+'>›</button></div>'+
     '<div class="calgrid"><div class="calwd">'+WD.map(function(x){return '<span>'+x+'</span>'}).join('')+'</div>'+rows+'</div>'+
-    '<p class="hint">Нажмите на любой день — откроется его неделя, с понедельника по воскресенье. Полоска под числом: тёмная — день заполнен, светлая — начат.</p></div>'+
+    '<p class="hint">Нажмите на любой день — откроется его неделя, с понедельника по воскресенье. Полоска под числом: тёмная — день заполнен, светлая — начат.</p>'+CREDIT+'</div>'+
     '<div class="foot"><button class="btn primary tall" data-act="caltoday">Сегодня</button></div>';
 }
 function shiftMonth(n){var d=parse(ui.cal);d.setMonth(d.getMonth()+n);ui.cal=iso(d);render()}
@@ -411,14 +413,14 @@ function vSend(){
   var top='<div class="top"><button class="round" data-act="day" aria-label="Назад">‹</button><div class="grow"><p class="eyebrow">'+weekLabel(ui.week)+'</p><h1 class="title big">Отправить терапевту</h1></div></div>';
   var text='<textarea id="send-text" readonly aria-label="Текст для терапевта">'+esc(weekText())+'</textarea>';
   var pair='<div class="pair">'+(navigator.share?'<button class="btn quiet" data-act="share">Поделиться</button>':'')+'<button class="btn quiet" data-act="copy">Скопировать</button></div>';
-  if(!ENDPOINT)return top+'<div class="scroll"><p class="hint">Неделя собрана в одно сообщение. Скопируйте его и вставьте в мессенджер. Сама страница никуда ничего не отправляет.</p>'+text+'</div>'+
+  if(!ENDPOINT)return top+'<div class="scroll"><p class="hint">Неделя собрана в одно сообщение. Скопируйте его и вставьте в мессенджер. Сама страница никуда ничего не отправляет.</p>'+text+CREDIT+'</div>'+
     '<div class="foot">'+(navigator.share?'<button class="btn quiet tall" data-act="share">Поделиться</button>':'')+'<button class="btn primary tall" data-act="copy">Скопировать</button></div>';
   var sl=sentLabel(ui.week);
   return top+'<div class="scroll">'+
     '<p class="hint">По кнопке внизу записи этой недели и ваше имя отправятся в таблицу вашего терапевта (Google Таблицы). Пока вы не нажали кнопку, ничего никуда не уходит.</p>'+
     '<div class="field"><label for="client-name">Ваше имя</label><input type="text" id="client-name" autocomplete="given-name" maxlength="60" placeholder="Как вас знает терапевт" value="'+esc(S.name)+'"></div>'+
     (sl?'<p class="sentline">'+sl+'</p>':'')+
-    '<h2 class="sub">Или перешлите текстом</h2>'+text+pair+'</div>'+
+    '<h2 class="sub">Или перешлите текстом</h2>'+text+pair+CREDIT+'</div>'+
     '<div class="foot"><button class="btn primary tall" id="send-btn" data-act="sendsheet">Отправить в таблицу</button></div>';
 }
 function sendSheet(btn){
